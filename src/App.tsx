@@ -1,24 +1,35 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Home, FlaskConical, BookOpenText, Calculator, ClipboardCheck } from 'lucide-react';
+import { Home, LayoutGrid, ClipboardCheck } from 'lucide-react';
 import { PageRoute } from './types';
 import { useLearningProgress } from './hooks/useLearningProgress';
-import { HomePage } from './components/HomePage';
-import { IpaModule } from './components/IpaModule';
-import { BahasaModule } from './components/BahasaModule';
-import { MatematikaModule } from './components/MatematikaModule';
-import { CombinedQuizPage } from './components/CombinedQuizPage';
+import { WelcomeScreen } from './components/WelcomeScreen';
+import { MenuScreen } from './components/MenuScreen';
+import { TopicBilangan } from './components/TopicBilangan';
+import { TopicRasio } from './components/TopicRasio';
+import { TopicBangunDatar } from './components/TopicBangunDatar';
+import { TopicBangunRuang } from './components/TopicBangunRuang';
+import { LatihanQuiz } from './components/LatihanQuiz';
 
-const VALID_ROUTES: PageRoute[] = ['beranda', 'ipa', 'bahasa', 'matematika', 'kuis'];
+const VALID_ROUTES: PageRoute[] = [
+  'welcome',
+  'menu',
+  'bilangan',
+  'rasio',
+  'bangun-datar',
+  'bangun-ruang',
+  'latihan',
+];
 
 function readRouteFromHash(): PageRoute {
-  if (typeof window === 'undefined') return 'beranda';
+  if (typeof window === 'undefined') return 'welcome';
   const raw = window.location.hash.replace('#', '').toLowerCase() as PageRoute;
-  return VALID_ROUTES.includes(raw) ? raw : 'beranda';
+  return VALID_ROUTES.includes(raw) ? raw : 'welcome';
 }
 
 export default function App() {
   const [route, setRoute] = useState<PageRoute>(readRouteFromHash);
-  const { progress, markLabCompleted, recordQuizScore, resetProgress } = useLearningProgress();
+  const { progress, markTopicCompleted, recordQuizResult, resetProgress } =
+    useLearningProgress();
 
   const navigate = useCallback((nextRoute: PageRoute) => {
     setRoute(nextRoute);
@@ -43,40 +54,34 @@ export default function App() {
     };
   }, []);
 
-  const navItems: { id: PageRoute; label: string }[] = [
-    { id: 'beranda', label: 'Beranda' },
-    { id: 'ipa', label: 'IPA' },
-    { id: 'bahasa', label: 'Bahasa' },
-    { id: 'matematika', label: 'Matematika' },
+  const desktopNavItems: { id: PageRoute; label: string }[] = [
+    { id: 'menu', label: 'Menu Materi' },
+    { id: 'bilangan', label: 'Bilangan' },
+    { id: 'rasio', label: 'Rasio & Skala' },
+    { id: 'bangun-datar', label: 'Bangun Datar' },
+    { id: 'bangun-ruang', label: 'Bangun Ruang' },
   ];
 
-  const mobileTabs: { id: PageRoute; label: string; icon: typeof Home }[] = [
-    { id: 'beranda', label: 'Beranda', icon: Home },
-    { id: 'ipa', label: 'IPA', icon: FlaskConical },
-    { id: 'bahasa', label: 'Bahasa', icon: BookOpenText },
-    { id: 'matematika', label: 'Matematika', icon: Calculator },
-  ];
+  const isWelcome = route === 'welcome';
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F8FA] text-slate-900">
-      {/* Desktop Top Bar (Strictly 3-zone contract) */}
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
+      {/* Desktop Top Bar (3-zone contract) */}
       <header className="hidden md:block sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-8">
-          {/* Zone 1: Brand Wordmark */}
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between gap-8">
           <a
-            href="#beranda"
+            href="#welcome"
             onClick={(e) => {
               e.preventDefault();
-              navigate('beranda');
+              navigate('welcome');
             }}
             className="font-display text-xl font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
           >
-            RuangNalar
+            Matematika 6 SD
           </a>
 
-          {/* Zone 2: 4 Clean Single-Line Nav Links */}
-          <nav aria-label="Navigasi utama" className="flex items-center gap-7">
-            {navItems.map((item) => {
+          <nav aria-label="Navigasi utama" className="flex items-center gap-6">
+            {desktopNavItems.map((item) => {
               const isActive = route === item.id;
               return (
                 <a
@@ -88,7 +93,7 @@ export default function App() {
                   }}
                   className={`text-sm font-medium whitespace-nowrap shrink-0 py-1 border-b-2 transition-colors ${
                     isActive
-                      ? 'text-slate-900 border-slate-900'
+                      ? 'text-blue-700 border-blue-700'
                       : 'text-slate-600 border-transparent hover:text-slate-900 hover:border-slate-300'
                   }`}
                 >
@@ -98,12 +103,11 @@ export default function App() {
             })}
           </nav>
 
-          {/* Zone 3: 1 Primary Action */}
           <div className="shrink-0">
             <button
               type="button"
-              onClick={() => navigate('kuis')}
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              onClick={() => navigate('latihan')}
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Latihan Soal
             </button>
@@ -111,144 +115,140 @@ export default function App() {
         </div>
       </header>
 
-      {/* Mobile Compact Sticky Header (48px — keeps total sticky height well under 15% cap) */}
-      <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
-        <div className="px-4 h-12 flex items-center justify-between gap-4">
-          <a
-            href="#beranda"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('beranda');
-            }}
-            className="font-display text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
-          >
-            RuangNalar
-          </a>
+      {/* Mobile Compact Header (hidden on welcome screen to preserve clean Screen1 feel) */}
+      {!isWelcome && (
+        <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
+          <div className="px-4 h-12 flex items-center justify-between gap-4">
+            <a
+              href="#menu"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('menu');
+              }}
+              className="font-display text-base font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
+            >
+              Matematika 6 SD
+            </a>
 
-          <button
-            type="button"
-            onClick={() => navigate('kuis')}
-            className={`inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-              route === 'kuis'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
-            }`}
-          >
-            <ClipboardCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Latihan Soal</span>
-          </button>
-        </div>
-      </header>
+            <button
+              type="button"
+              onClick={() => navigate('latihan')}
+              className={`inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
+                route === 'latihan'
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-blue-50 text-blue-800 border border-blue-200'
+              }`}
+            >
+              <ClipboardCheck className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Latihan (10)</span>
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 pb-24 md:pb-14">
-        {route === 'beranda' && (
-          <HomePage
+      <main
+        className={`flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 ${
+          isWelcome ? 'pb-8' : 'pb-24 md:pb-14'
+        }`}
+      >
+        {route === 'welcome' && (
+          <WelcomeScreen
+            completedCount={progress.completedTopics.length}
+            bestQuizScore={progress.bestQuizScore}
+            onStart={() => navigate('menu')}
+          />
+        )}
+
+        {route === 'menu' && (
+          <MenuScreen
             progress={progress}
             onNavigate={navigate}
             onResetProgress={resetProgress}
           />
         )}
 
-        {route === 'ipa' && (
-          <IpaModule
-            completedLabs={progress.completedLabs}
-            bestQuizScore={progress.bestQuizScores.ipa}
-            onCompleteLab={markLabCompleted}
-            onCompleteQuiz={(pct) => recordQuizScore('ipa', pct)}
+        {route === 'bilangan' && (
+          <TopicBilangan
+            completedTopics={progress.completedTopics}
+            onCompleteTopic={markTopicCompleted}
+            onNavigate={navigate}
           />
         )}
 
-        {route === 'bahasa' && (
-          <BahasaModule
-            completedLabs={progress.completedLabs}
-            bestQuizScore={progress.bestQuizScores.bahasa}
-            onCompleteLab={markLabCompleted}
-            onCompleteQuiz={(pct) => recordQuizScore('bahasa', pct)}
+        {route === 'rasio' && (
+          <TopicRasio
+            completedTopics={progress.completedTopics}
+            onCompleteTopic={markTopicCompleted}
+            onNavigate={navigate}
           />
         )}
 
-        {route === 'matematika' && (
-          <MatematikaModule
-            completedLabs={progress.completedLabs}
-            bestQuizScore={progress.bestQuizScores.matematika}
-            onCompleteLab={markLabCompleted}
-            onCompleteQuiz={(pct) => recordQuizScore('matematika', pct)}
+        {route === 'bangun-datar' && (
+          <TopicBangunDatar
+            completedTopics={progress.completedTopics}
+            onCompleteTopic={markTopicCompleted}
+            onNavigate={navigate}
           />
         )}
 
-        {route === 'kuis' && (
-          <CombinedQuizPage
-            bestScores={progress.bestQuizScores}
-            onRecordScore={recordQuizScore}
+        {route === 'bangun-ruang' && (
+          <TopicBangunRuang
+            completedTopics={progress.completedTopics}
+            onCompleteTopic={markTopicCompleted}
+            onNavigate={navigate}
+          />
+        )}
+
+        {route === 'latihan' && (
+          <LatihanQuiz
+            bestScore={progress.bestQuizScore}
+            onCompleteQuiz={recordQuizResult}
+            onNavigate={navigate}
           />
         )}
       </main>
 
-      {/* Clean Footer */}
-      <footer className="hidden md:block border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>RuangNalar — Media Pembelajaran Interaktif IPA, Bahasa Indonesia &amp; Matematika</p>
-          <div className="flex items-center gap-4">
-            <a
-              href="#ipa"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('ipa');
-              }}
-              className="hover:text-slate-900"
+      {/* Mobile Fixed Bottom Navigation (shown after leaving welcome screen) */}
+      {!isWelcome && (
+        <nav
+          aria-label="Navigasi seluler"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 pb-safe"
+        >
+          <div className="grid grid-cols-3 h-14">
+            <button
+              type="button"
+              onClick={() => navigate('welcome')}
+              className="flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-slate-500 hover:text-slate-900 cursor-pointer"
             >
-              IPA
-            </a>
-            <a
-              href="#bahasa"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('bahasa');
-              }}
-              className="hover:text-slate-900"
-            >
-              Bahasa
-            </a>
-            <a
-              href="#matematika"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('matematika');
-              }}
-              className="hover:text-slate-900"
-            >
-              Matematika
-            </a>
-          </div>
-        </div>
-      </footer>
+              <Home className="w-5 h-5" aria-hidden="true" />
+              <span className="text-[11px] leading-none">Awal</span>
+            </button>
 
-      {/* Mobile Fixed Bottom Thumb Navigation Bar (56px) */}
-      <nav
-        aria-label="Navigasi seluler"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 pb-safe"
-      >
-        <div className="grid grid-cols-4 h-14">
-          {mobileTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = route === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => navigate(tab.id)}
-                className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] cursor-pointer transition-colors ${
-                  isActive ? 'text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Icon className="w-5 h-5" strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
-                <span className="text-[11px] leading-none">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+            <button
+              type="button"
+              onClick={() => navigate('menu')}
+              className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] cursor-pointer ${
+                route !== 'latihan' ? 'text-blue-700 font-semibold' : 'text-slate-500'
+              }`}
+            >
+              <LayoutGrid className="w-5 h-5" aria-hidden="true" />
+              <span className="text-[11px] leading-none">Menu Materi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('latihan')}
+              className={`flex flex-col items-center justify-center gap-0.5 min-h-[44px] cursor-pointer ${
+                route === 'latihan' ? 'text-blue-700 font-semibold' : 'text-slate-500'
+              }`}
+            >
+              <ClipboardCheck className="w-5 h-5" aria-hidden="true" />
+              <span className="text-[11px] leading-none">Latihan (10)</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

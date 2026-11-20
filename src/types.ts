@@ -1,35 +1,27 @@
-export type PageRoute = 'beranda' | 'ipa' | 'bahasa' | 'matematika' | 'kuis';
+export type TopicId = 'bilangan' | 'rasio' | 'bangun-datar' | 'bangun-ruang';
 
-export type SubjectId = 'ipa' | 'bahasa' | 'matematika';
+export type PageRoute = 'welcome' | 'menu' | TopicId | 'latihan';
+
+export interface TopicInfo {
+  id: TopicId;
+  numberLabel: string;
+  title: string;
+  shortDesc: string;
+  keyFormula: string;
+}
 
 export interface QuizQuestion {
   id: string;
-  subject: SubjectId;
-  topic: string;
+  topicId: TopicId;
+  topicLabel: string;
   question: string;
   options: string[];
   correctIndex: number;
   explanation: string;
 }
 
-export interface SubjectInfo {
-  id: SubjectId;
-  numberLabel: string;
-  title: string;
-  shortTitle: string;
-  subtitle: string;
-  summary: string;
-  imagePath: string;
-  imageAlt: string;
-  modules: {
-    id: string;
-    title: string;
-    description: string;
-  }[];
-  metaItems: string[];
-}
-
 export interface LearningProgress {
-  completedLabs: string[];
-  bestQuizScores: Partial<Record<SubjectId | 'kuis', number>>;
+  completedTopics: TopicId[];
+  bestQuizScore?: number;
+  lastQuizScore?: number;
 }

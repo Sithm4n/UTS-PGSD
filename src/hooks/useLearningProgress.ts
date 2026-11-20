@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LearningProgress, SubjectId } from '../types';
+import { LearningProgress, TopicId } from '../types';
 
-const STORAGE_KEY = 'ruangnalar_progress_v1';
+const STORAGE_KEY = 'matematika_sd6_progress_v1';
 
 const DEFAULT_PROGRESS: LearningProgress = {
-  completedLabs: [],
-  bestQuizScores: {},
+  completedTopics: [],
 };
 
 export function useLearningProgress() {
@@ -15,8 +14,9 @@ export function useLearningProgress() {
       if (!raw) return DEFAULT_PROGRESS;
       const parsed = JSON.parse(raw) as LearningProgress;
       return {
-        completedLabs: Array.isArray(parsed.completedLabs) ? parsed.completedLabs : [],
-        bestQuizScores: parsed.bestQuizScores || {},
+        completedTopics: Array.isArray(parsed.completedTopics) ? parsed.completedTopics : [],
+        bestQuizScore: typeof parsed.bestQuizScore === 'number' ? parsed.bestQuizScore : undefined,
+        lastQuizScore: typeof parsed.lastQuizScore === 'number' ? parsed.lastQuizScore : undefined,
       };
     } catch {
       return DEFAULT_PROGRESS;
@@ -27,32 +27,29 @@ export function useLearningProgress() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
     } catch {
-      // Ignore storage quota or WebViewer private mode restrictions
+      // Ignore storage errors in restricted WebViewer sessions
     }
   }, [progress]);
 
-  const markLabCompleted = useCallback((labId: string) => {
+  const markTopicCompleted = useCallback((topicId: TopicId) => {
     setProgress((prev) => {
-      if (prev.completedLabs.includes(labId)) return prev;
+      if (prev.completedTopics.includes(topicId)) return prev;
       return {
         ...prev,
-        completedLabs: [...prev.completedLabs, labId],
+        completedTopics: [...prev.completedTopics, topicId],
       };
     });
   }, []);
 
-  const recordQuizScore = useCallback((key: SubjectId | 'kuis', percentage: number) => {
-    setProgress((prev) => {
-      const currentBest = prev.bestQuizScores[key] ?? -1;
-      if (percentage <= currentBest) return prev;
-      return {
-        ...prev,
-        bestQuizScores: {
-          ...prev.bestQuizScores,
-          [key]: percentage,
-        },
-      };
-    });
+  const recordQuizResult = useCallback((percentage: number) => {
+    setProgress((prev) => ({
+      ...prev,
+      lastQuizScore: percentage,
+      bestQuizScore:
+        typeof prev.bestQuizScore === 'number'
+          ? Math.max(prev.bestQuizScore, percentage)
+          : percentage,
+    }));
   }, []);
 
   const resetProgress = useCallback(() => {
@@ -61,8 +58,8 @@ export function useLearningProgress() {
 
   return {
     progress,
-    markLabCompleted,
-    recordQuizScore,
+    markTopicCompleted,
+    recordQuizResult,
     resetProgress,
   };
 }
